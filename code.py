@@ -9,8 +9,7 @@ from adafruit_apds9960.apds9960 import APDS9960
 import array
 import math
 import audiobusio
-
-
+import digitalio
 
 i2c = busio.I2C(board.SCL, board.SDA)
 
@@ -52,6 +51,17 @@ def normalized_rms(values):
 mic = audiobusio.PDMIn(board.MICROPHONE_CLOCK, board.MICROPHONE_DATA, sample_rate=16000, bit_depth=16)
 samples = array.array('H', [0] * 160)
 
+
+# Buttons
+button_a = digitalio.DigitalInOut(board.BUTTON_A)
+button_a.direction = digitalio.Direction.INPUT
+button_a.pull = digitalio.Pull.UP
+
+button_b = digitalio.DigitalInOut(board.BUTTON_B)
+button_b.direction = digitalio.Direction.INPUT
+button_b.pull = digitalio.Pull.UP
+
+
 while True:
     print('Temp: {} C'.format(sensor.temperature)) 
     print('Pressure: {}hPa'.format(sensor.pressure))
@@ -85,6 +95,9 @@ while True:
     mic.record(samples, len(samples))
     magnitude = normalized_rms(samples)
     print("Microphone: %s" % (magnitude,))
+
+    print("Button A: {}".format(not button_a.value))
+    print("Button B: {}".format(not button_b.value))
     time.sleep(0.1)
 
     print("")
