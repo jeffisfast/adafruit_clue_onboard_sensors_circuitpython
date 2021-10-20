@@ -32,7 +32,7 @@ apds_sensor.enable_proximity = True
 apds_sensor.enable_gesture = True
 apds_sensor.enable_color = True
 # Uncomment and set the rotation if depending on how your sensor is mounted.
-# apds_sensor.rotation = 270 # 270 for CLUE
+apds_sensor.rotation = 270 # 270 for CLUE
 
 #Audio sampling
 # Remove DC bias before computing RMS.
