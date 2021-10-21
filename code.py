@@ -10,7 +10,18 @@ import array
 import math
 import audiobusio
 import digitalio
+from adafruit_ble import BLERadio
+from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
+from adafruit_ble.services.nordic import UARTService
 
+#BLE setup
+SEND_RATE = 10 # how often in seconds to send text
+ble = BLERadio()
+uart_server = UARTService()
+advertisement = ProvideServicesAdvertisement(uart_server)
+ble.start_advertising(advertisement)
+
+#I2C setup
 i2c = busio.I2C(board.SCL, board.SDA)
 
 #Temp, pressure, altitude
@@ -31,7 +42,7 @@ apds_sensor = APDS9960(i2c)
 apds_sensor.enable_proximity = True
 apds_sensor.enable_gesture = True
 apds_sensor.enable_color = True
-# Uncomment and set the rotation if depending on how your sensor is mounted.
+# Set the rotation if depending on how your sensor is mounted.
 apds_sensor.rotation = 270 # 270 for CLUE
 
 #Audio sampling
@@ -63,43 +74,50 @@ button_b.pull = digitalio.Pull.UP
 
 
 while True:
-    print('Temp: {} C'.format(sensor.temperature)) 
-    print('Pressure: {}hPa'.format(sensor.pressure))
-    print("Altitude: {:.1f} m".format(sensor.altitude))
-
-    print('Humidity: {0}%'.format(hum_sensor.relative_humidity))
-    
-    print("Acceleration: X:%.2f, Y: %.2f, Z: %.2f m/s^2" % (acc_sensor.acceleration))
-    print("Gyro X:%.2f, Y: %.2f, Z: %.2f degrees/s" % (acc_sensor.gyro))
+    output_text = 'Temp: {} C'.format(sensor.temperature) 
+    output_text += "\nPressure: {} hPa".format(sensor.pressure)
+    output_text += "\nAltitude: {:.1f} m".format(sensor.altitude)
+    output_text += "\nHumidity: {0}%".format(hum_sensor.relative_humidity)
+    output_text += "\nAcceleration: X:%.2f, Y: %.2f, Z: %.2f m/s^2" % (acc_sensor.acceleration)
+    output_text += "\nGyro X:%.2f, Y: %.2f, Z: %.2f degrees/s" % (acc_sensor.gyro)
 
     mag_x, mag_y, mag_z = mag_sensor.magnetic
-    print('Mag X:{0:10.2f}, Mag Y:{1:10.2f}, Mag Z:{2:10.2f} uT'.format(mag_x, mag_y, mag_z))
 
-    print("Proximity: {0}".format(apds_sensor.proximity))
+    output_text +="\nMag X:{0:10.2f}, Mag Y:{1:10.2f}, Mag Z:{2:10.2f} uT".format(mag_x, mag_y, mag_z)
+
+    output_text +="\nProximity: {0}".format(apds_sensor.proximity)
+
     r, g, b, c = apds_sensor.color_data
-    print('Red: {0}, Green: {1}, Blue: {2}, Clear: {3}'.format(r, g, b, c))
-
+    output_text += "Red: {0}, Green: {1}, Blue: {2}, Clear: {3}:".format(r, g, b, c)
+    
     gesture = apds_sensor.gesture()
 
     if gesture == 0x01:
-        print("Gesture: up")
+        my_gesture = "Gesture: up"
     elif gesture == 0x02:
-        print("Gesture: down")
+        my_gesture = "Gesture: down"
     elif gesture == 0x03:
-        print("Gesture: left")
+        my_gesture = "Gesture: left"
     elif gesture == 0x04:
-        print("Gesture: right")
+        my_gesture = "Gesture: right"
     else:
-        print("Gesture: none")
+        my_gesture = "Gesture: none"
+
+    output_text += "\n" + my_gesture
 
     mic.record(samples, len(samples))
     magnitude = normalized_rms(samples)
-    print("Microphone: %s" % (magnitude,))
+    output_text += "\nMicrophone: %s" % (magnitude,)
 
-    print("Button A: {}".format(not button_a.value))
-    print("Button B: {}".format(not button_b.value))
+    output_text += "\nButton A: {}".format(not button_a.value)
+    output_text += "\nButton B: {}".format(not button_b.value)
+
+    output_text += "\n\n"
+
+    print(output_text)
+
+    if ble.connected:
+        ble.stop_advertising()
+        print("BLE CONNECTED")
+        uart_server.write(output_text.encode())
     time.sleep(0.1)
-
-    print("")
-
-
