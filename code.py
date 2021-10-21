@@ -88,7 +88,7 @@ while True:
     output_text +="\nProximity: {0}".format(apds_sensor.proximity)
 
     r, g, b, c = apds_sensor.color_data
-    output_text += "Red: {0}, Green: {1}, Blue: {2}, Clear: {3}:".format(r, g, b, c)
+    output_text += "\nRed: {0}, Green: {1}, Blue: {2}, Clear: {3}:".format(r, g, b, c)
     
     gesture = apds_sensor.gesture()
 
